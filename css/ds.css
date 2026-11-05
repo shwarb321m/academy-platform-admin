@@ -3,11 +3,11 @@
    المصدر: design/tokens.json
    ═══════════════════════════════════════════════════════════ */
 
-@font-face { font-family: 'Plex Arabic'; src: url('../fonts/IBMPlexSansArabic-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
-@font-face { font-family: 'Plex Arabic'; src: url('../fonts/IBMPlexSansArabic-Medium.ttf') format('truetype'); font-weight: 500; font-display: swap; }
-@font-face { font-family: 'Plex Arabic'; src: url('../fonts/IBMPlexSansArabic-SemiBold.ttf') format('truetype'); font-weight: 600; font-display: swap; }
-@font-face { font-family: 'Plex Arabic'; src: url('../fonts/IBMPlexSansArabic-Bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
-@font-face { font-family: 'Naskh'; src: url('../fonts/NotoNaskhArabic.ttf') format('truetype'); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: 'Plex Arabic'; src: url('../fonts/IBMPlexSansArabic-Regular.woff') format('woff'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Plex Arabic'; src: url('../fonts/IBMPlexSansArabic-Medium.woff') format('woff'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'Plex Arabic'; src: url('../fonts/IBMPlexSansArabic-SemiBold.woff') format('woff'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'Plex Arabic'; src: url('../fonts/IBMPlexSansArabic-Bold.woff') format('woff'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Naskh'; src: url('../fonts/NotoNaskhArabic.woff') format('woff'); font-weight: 400 700; font-display: swap; }
 
 :root {
   --ivory: #F7F3EA; --ink: #202B2C; --green: #28483D; --green-deep: #1D372E; --green-soft: #E6ECE8;
@@ -275,3 +275,8 @@ dialog.dialog.wide { width: min(820px, calc(100vw - 32px)); }
 .drop { border: 1.5px dashed var(--line-strong); border-radius: var(--r-lg); padding: 26px; text-align: center; background: var(--warm-white); color: var(--stone); cursor: pointer; }
 .drop.over { border-color: var(--green); background: var(--green-soft); }
 @media (max-width: 760px) { .form-grid.two { grid-template-columns: 1fr; } }
+
+/* شريط تحميل علوي رفيع أثناء الاتصال بالخادم */
+html.net-busy body::before { content: ''; position: fixed; top: 0; right: 0; left: 0; height: 2px; z-index: 200;
+  background: linear-gradient(90deg, transparent, var(--brass), var(--green), transparent); background-size: 200% 100%; animation: netbar 1s linear infinite; }
+@keyframes netbar { from { background-position: 200% 0; } to { background-position: -200% 0; } }

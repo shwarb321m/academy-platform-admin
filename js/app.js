@@ -1,5 +1,5 @@
 // نقطة تشغيل لوحة الإدارة: التوجيه، الإطار، حالة الجلسة.
-import { api, config, session, can, onUnauthenticated } from './api.js';
+import { api, config, session, can, onUnauthenticated, prefetch } from './api.js';
 import { esc, $, $$, icon, toast, initials, ROLE_NAMES } from './ui.js';
 import * as A from './auth-pages.js';
 import * as P from './admin-pages.js';
@@ -83,8 +83,21 @@ function renderShell() {
   $('[data-menu]').onclick = () => $('.shell').classList.toggle('nav-open');
 }
 
+/** بعد فتح اللوحة: تحميل مسبق لأكثر الصفحات استخداماً في اتصال واحد بالخلفية. */
+function warmUp() {
+  const list = [];
+  if (can('dashboard.view')) list.push(['dashboard.summary']);
+  if (can('courses.manage.own')) list.push(['courses.adminList', { pageSize: 100 }]);
+  if (can('categories.manage')) list.push(['categories.list']);
+  if (can('users.view')) list.push(['users.list', { role: 'student', page: 1 }]);
+  if (can('sessions.manage.own')) list.push(['live.adminList']);
+  if (can('quizzes.manage.own')) list.push(['quizzes.list']);
+  if (can('assignments.manage.own')) list.push(['assignments.list']);
+  setTimeout(() => prefetch(list), 400);
+}
+
 function renderPage(route, params) {
-  if (!$('.shell')) renderShell();
+  if (!$('.shell')) { renderShell(); warmUp(); }
   $$('.nav a').forEach((a) => a.classList.toggle('active', a.dataset.path === (route.parent || route.path)));
   $('.shell').classList.remove('nav-open');
   $('[data-crumbs]').textContent = route.label;
@@ -96,7 +109,7 @@ function renderPage(route, params) {
 }
 
 async function loadMe() {
-  session.me = await api('auth.me');
+  session.me = await api('auth.me', {}, { fresh: true });
   return session.me;
 }
 
@@ -160,7 +173,9 @@ window.addEventListener('hashchange', route);
 async function boot() {
   app.innerHTML = '<div class="empty" style="padding-top:30vh"><span class="ornament"></span><p>جارٍ التحميل…</p></div>';
   try {
-    const [settings, setup] = await Promise.all([api('settings.public'), api('setup.status')]);
+    // الإعدادات + حالة التأسيس + بيانات المستخدم في اتصال واحد مدمج
+    const [settings, setup] = await Promise.all([api('settings.public'), api('setup.status'),
+      session.token ? api('auth.me').then((me) => { session.me = me; }).catch(() => {}) : null]);
     pub = settings; A.setPublicSettings(pub);
     applyBrand(pub['brand.colors']);
     if (setup.needsSuperAdmin && !session.token) { location.hash = '#/setup'; return route(); }
