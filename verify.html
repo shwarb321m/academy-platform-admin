@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>التحقق من شهادة</title>
+  <link rel="stylesheet" href="css/ds.css">
+  <script src="config.js"></script>
+  <style>
+    .wrap { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+    .box { width: min(560px, 100%); padding: 36px; text-align: center; }
+    .result { margin-top: 24px; padding: 22px; border-radius: 12px; border: 1px solid var(--line); background: var(--ivory); text-align: right; }
+    .result.ok { border-color: #D3E0D7; background: #EDF2EE; }
+    .result.bad { border-color: #E8CFC9; background: var(--danger-soft); }
+    .result h3 { font-family: var(--font-display); font-size: 22px; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <div class="wrap"><div class="card box">
+    <div class="seal" style="margin:0 auto 18px" id="seal">أ</div>
+    <h1 class="display" style="font-size:28px" id="title">التحقق من شهادة</h1>
+    <p class="muted">أدخل الرقم التسلسلي المطبوع على الشهادة.</p>
+    <form id="f" style="display:flex;gap:8px;margin-top:18px">
+      <input class="input" id="serial" dir="ltr" placeholder="AC-2026-XXXXXXXX" required style="text-transform:uppercase">
+      <button class="btn" type="submit">تحقق</button>
+    </form>
+    <div id="out"></div>
+  </div></div>
+  <script>
+    const url = (window.ACADEMY_CONFIG && window.ACADEMY_CONFIG.apiUrl) || localStorage.getItem('academy_api_url') || '';
+    const esc = (s) => String(s || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const call = (action, payload) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, payload }) }).then((r) => r.json());
+    call('settings.public', {}).then((r) => { if (r.ok) { const n = r.data['academy.name'] || 'الأكاديمية'; document.getElementById('seal').textContent = n.charAt(0); document.title = 'التحقق من شهادة — ' + n; } }).catch(() => {});
+    const out = document.getElementById('out');
+    async function check(serial) {
+      out.innerHTML = '<p class="muted" style="margin-top:20px">جارٍ التحقق…</p>';
+      try {
+        const r = await call('certificates.verify', { serial });
+        if (!r.ok) throw new Error(r.error.message);
+        const d = r.data;
+        if (!d.found) out.innerHTML = '<div class="result bad"><h3>لم يُعثر على الشهادة</h3><p>تأكد من كتابة الرقم بشكل صحيح.</p></div>';
+        else out.innerHTML = `<div class="result ${d.valid ? 'ok' : 'bad'}"><h3>${d.valid ? '✓ شهادة صحيحة' : '✗ هذه الشهادة ملغاة'}</h3>
+          <dl class="kv"><dt>الاسم</dt><dd>${esc(d.studentName)}</dd><dt>الدورة</dt><dd>${esc(d.courseTitle)}</dd>
+          <dt>تاريخ الإصدار</dt><dd>${new Date(d.issuedAt).toLocaleDateString('ar-SY-u-nu-latn')}</dd><dt>الجهة المانحة</dt><dd>${esc(d.issuerName)}</dd>
+          <dt>الرقم</dt><dd class="num">${esc(d.serial)}</dd>${d.valid ? '' : `<dt>السبب</dt><dd>${esc(d.revokedReason)}</dd>`}</dl></div>`;
+      } catch (e) { out.innerHTML = `<div class="result bad"><h3>تعذّر التحقق</h3><p>${esc(e.message)}</p></div>`; }
+    }
+    document.getElementById('f').onsubmit = (e) => { e.preventDefault(); const s = document.getElementById('serial').value.trim().toUpperCase(); history.replaceState(null, '', '?serial=' + encodeURIComponent(s)); check(s); };
+    const q = new URLSearchParams(location.search).get('serial');
+    if (q) { document.getElementById('serial').value = q; check(q.toUpperCase()); }
+  </script>
+</body>
+</html>
