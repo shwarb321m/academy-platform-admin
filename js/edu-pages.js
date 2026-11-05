@@ -160,6 +160,7 @@ export function courseBuilder(root, params) {
         ${can('courses.manage') ? '<button class="btn secondary" data-dup>نسخ الدورة</button>' : ''}
         ${c.status === 'published' ? '<button class="btn secondary" data-status="draft">إلغاء النشر</button>' : '<button class="btn" data-status="published">نشر الدورة</button>'}
       </div></div>
+      ${c.status !== 'published' ? '<div class="card" style="border-color:var(--warning);margin-bottom:16px;padding:12px 16px">⚠️ الدورة مسودة — لا تظهر للطلاب في التطبيق حتى تضغط «نشر الدورة». (يمكن نشرها حتى بدون دروس، للبث المباشر فقط)</div>' : ''}
       <div class="tabs" role="tablist">
         ${[['content', 'المحتوى'], ['students', 'الطلاب'], ['assess', 'الاختبارات والواجبات']].map(([k, l]) => `<button class="tab" data-tab="${k}" aria-selected="${tab === k}">${l}</button>`).join('')}
       </div><div data-pane></div>`;
@@ -230,7 +231,7 @@ function contentPane(pane, c, reload) {
       { name: 'isPreview', label: 'معاينة مجانية (يراه غير المسجلين)', type: 'checkbox', full: true }
     ];
     const values = l ? { ...l, durationMin: l.durationSec ? Math.round(l.durationSec / 60) : '', completionThreshold: l.completionThreshold || '',
-      videoRef: l.videoProvider === 'youtube' ? 'https://youtu.be/' + l.videoRef : l.videoProvider === 'drive' ? 'https://drive.google.com/file/d/' + l.videoRef + '/view' : l.videoRef } : { moduleId, status: 'draft', videoProvider: 'youtube' };
+      videoRef: l.videoProvider === 'youtube' ? 'https://youtu.be/' + l.videoRef : l.videoProvider === 'drive' ? 'https://drive.google.com/file/d/' + l.videoRef + '/view' : l.videoRef } : { moduleId, status: 'published', videoProvider: 'youtube' };
     if (await formDialog({ title: l ? 'تعديل الدرس' : 'درس جديد', fields, values, wide: true, onSubmit: (v) => mutate('lessons.save', { ...v, id: l?.id, courseId: c.id }) })) { toast('حُفظ الدرس'); reload(); }
   };
   $$('[data-addles]', pane).forEach((b) => (b.onclick = () => editLesson(null, b.dataset.addles)));
